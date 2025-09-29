@@ -3,6 +3,7 @@ from typing import Dict, Any, List, Optional
 import re
 from collections import defaultdict
 import json
+import math # Import math for exp, or use np.exp
 
 # --- 1. Reusable Unbiased Collective Memory Class ---
 
@@ -16,7 +17,7 @@ class UnbiasedCollectiveMemory:
                  alpha: float = 1.0, 
                  beta: float = 0.5, 
                  delta: float = 0.5,
-                 decay_rate_factor: float = 80.0,
+                 decay_rate_factor: float = 5.0,
                  anchor_penalty_factor: float = 0.5):
         """
         Initializes the memory with debiasing parameters.
@@ -33,6 +34,7 @@ class UnbiasedCollectiveMemory:
         self.MAX_RAN_BW = 40.0
         self.MIN_RAN_BW = 5.0
         self.MAX_EDGE_CPU = 45.0
+        self.initial_anchor_point = None
 
     def _tokenize_text(self, text: str) -> set:
         """Helper to tokenize text for semantic similarity."""
@@ -108,7 +110,7 @@ class UnbiasedCollectiveMemory:
 
         :param query_context: Dictionary containing 'current_trial_number', 'keywords', 
                               and 'initial_anchor_point'.
-        :return: A dictionary containing the top 5 'retrieved_strategies'.
+        :return: A dictionary containing the top 5 'retrieved_strategies' (including 'final_score').
         """
         current_trial_number = query_context.get("current_trial_number", 0) 
         query_keywords_set = self._tokenize_text(" ".join(query_context.get("keywords", [])))
@@ -125,6 +127,8 @@ class UnbiasedCollectiveMemory:
             age = current_trial_number - strategy["context"].get("trial_number", 0)
             time_decay_score = np.exp(-max(0, age) / self.decay_rate_factor) 
             
+            base_score = (self.alpha * semantic_similarity) + (self.beta * time_decay_score)
+            
             # 3. Anchor Penalty: Combats anchor bias by penalizing closeness to the initial proposal
             anchor_penalty = self._calculate_anchor_penalty(strategy, initial_anchor) if initial_anchor else 0.0
             
@@ -135,22 +139,34 @@ class UnbiasedCollectiveMemory:
                 inflection_bonus = self.delta
 
             # Final Score: Weighted combination of all debiased factors
-            final_score = (self.alpha * semantic_similarity) + (self.beta * time_decay_score) + inflection_bonus - anchor_penalty
+            final_score = base_score + inflection_bonus - anchor_penalty
             
-            scored_candidates.append({"strategy": strategy, "final_score": final_score})
+            # Store everything needed for the demonstration printout
+            scored_candidates.append({
+                "strategy": strategy, 
+                "final_score": final_score
+            })
         
         # Sort and select top N
         scored_candidates.sort(key=lambda x: x["final_score"], reverse=True)
 
         top_n = 5
-        selected_strategies = [candidate["strategy"] for candidate in scored_candidates[:top_n]]
+        
+        # FIX: The retrieved list must contain the final_score for the demo to work.
+        # We merge the final_score into the strategy dictionary for the output list.
+        retrieved_strategies_with_score = []
+        for candidate in scored_candidates[:top_n]:
+            strategy_copy = candidate["strategy"].copy()
+            strategy_copy['final_score'] = candidate['final_score']
+            retrieved_strategies_with_score.append(strategy_copy)
+
 
         return {
-            "retrieved_strategies": selected_strategies,
+            "retrieved_strategies": retrieved_strategies_with_score, # Use the list that includes final_score
             "query_memory_average_score": np.mean([c["final_score"] for c in scored_candidates[:top_n]]) if scored_candidates else 0.0
         }
 
-# --- 2. Mockup of Agentic Use ---
+# --- 2. Demonstration of Agentic Use ---
 
 def demonstrate_memory_use():
     """
@@ -164,7 +180,8 @@ def demonstrate_memory_use():
         "ran_bandwidth_mhz": 25.0, 
         "edge_cpu_frequency_ghz": 30.0
     }
-    memory.initial_anchor_point = INITIAL_ANCHOR
+    # Set the anchor point on the memory instance (used internally by query_memory)
+    memory.initial_anchor_point = INITIAL_ANCHOR 
     
     # 2. Log Past Episodes (Distill Strategies)
     # Strategy 1 (Old, High Energy Saving, Close to Anchor - Should be penalized)
@@ -173,7 +190,8 @@ def demonstrate_memory_use():
         "agreed_config": {"ran_bw": 26.0, "edge_cpu": 31.0}, "saved_energy_percent": 15.0,
         "description": "Compromise with low-medium BW and CPU. High energy savings.",
         "sla_violation_occurred": False, "unresolved_negotiation": False,
-        "final_metrics": {"current_traffic_arrival_rate_bps": 50000000}
+        "final_metrics": {"current_traffic_arrival_rate_bps": 50000000},
+        "performance_score": 0.75 # Placeholder calculation for performance score
     })
     
     # Strategy 2 (Recent, Failure, Far from Anchor - High Inflection Bonus)
@@ -182,7 +200,8 @@ def demonstrate_memory_use():
         "agreed_config": {"ran_bw": 40.0, "edge_cpu": 45.0}, "saved_energy_percent": 0.0,
         "description": "Aggressive, high capacity proposal led to SLA violation.",
         "sla_violation_occurred": True, "unresolved_negotiation": False,
-        "final_metrics": {"current_traffic_arrival_rate_bps": 80000000}
+        "final_metrics": {"current_traffic_arrival_rate_bps": 80000000},
+        "performance_score": -1.0 # Placeholder calculation for performance score
     })
 
     # Strategy 3 (Old, Medium Performance, Far from Anchor - Lower Score)
@@ -191,7 +210,8 @@ def demonstrate_memory_use():
         "agreed_config": {"ran_bw": 10.0, "edge_cpu": 28.0}, "saved_energy_percent": 5.0,
         "description": "Conservative, low BW for low traffic. Minimal performance.",
         "sla_violation_occurred": False, "unresolved_negotiation": False,
-        "final_metrics": {"current_traffic_arrival_rate_bps": 30000000}
+        "final_metrics": {"current_traffic_arrival_rate_bps": 30000000},
+        "performance_score": 0.525
     })
 
     # Strategy 4 (Very Recent, Good Performance, Far from Anchor - Should score highly)
@@ -200,7 +220,8 @@ def demonstrate_memory_use():
         "agreed_config": {"ran_bw": 35.0, "edge_cpu": 40.0}, "saved_energy_percent": 10.0,
         "description": "Balanced high performance setting for medium traffic.",
         "sla_violation_occurred": False, "unresolved_negotiation": False,
-        "final_metrics": {"current_traffic_arrival_rate_bps": 55000000}
+        "final_metrics": {"current_traffic_arrival_rate_bps": 55000000},
+        "performance_score": 0.65
     })
     
     print("--- Memory Distillation Complete ---")
@@ -213,7 +234,7 @@ def demonstrate_memory_use():
     QUERY_CONTEXT = {
         "current_trial_number": CURRENT_TRIAL,
         "keywords": ["medium", "traffic", "balanced", "energy", "performance"],
-        "initial_anchor_point": INITIAL_ANCHOR
+        "initial_anchor_point": INITIAL_ANCHOR # Pass the anchor for penalty calculation
     }
 
     retrieval = memory.query_memory(query_context=QUERY_CONTEXT)
@@ -225,10 +246,13 @@ def demonstrate_memory_use():
     retrieved_strategies = retrieval['retrieved_strategies']
     
     for i, strategy in enumerate(retrieved_strategies):
+        # The strategy dictionary now contains 'final_score' due to the fix in query_memory
+        final_score = strategy['final_score'] 
+        
         # Recalculate anchor deviation for demonstration printout
         anchor_deviation = memory._calculate_anchor_penalty(strategy, INITIAL_ANCHOR)
         
-        print(f"Rank {i+1} (Score: {strategy['final_score']:.2f}):")
+        print(f"Rank {i+1} (Score: {final_score:.2f}):")
         print(f"  > Description: {strategy['description']}")
         print(f"  > Trial: {strategy['context']['trial_number']} (Age: {CURRENT_TRIAL - strategy['context']['trial_number']})")
         print(f"  > BW/CPU: {strategy['action']['last_ran_proposal_mhz']:.1f} / {strategy['action']['last_edge_proposal_ghz']:.1f}")
