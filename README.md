@@ -8,7 +8,7 @@ This approach addresses the following biases:
 
 1.  **Temporal Bias (Recency/Primacy):** Controlled by a `time-decay score` that weights memories based on their age.
 2.  **Anchor Bias:** Mitigated by an **Anchor Penalty** that suppresses memories too similar to the first proposal of the current negotiation.
-3.  **Success Bias (Rosy Retrospection):** Addressed by an **Inflection Bonus** that increases the salience of past negotiation failures (SLA violations or unresolved talks), ensuring the agent learns from mistakes.
+3.  **Confirmation Bias:** Addressed by an **Inflection Bonus** that increases the salience of past negotiation failures (SLA violations or unresolved talks), ensuring the agent learns from mistakes.
 
 -----
 
