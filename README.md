@@ -83,7 +83,7 @@ for i, strategy in enumerate(retrieval['retrieved_strategies']):
 | `alpha` | `float` | `1.0` | **Semantic Weight.** Emphasizes keyword matching relevance. |
 | `beta` | `float` | `0.5` | **Temporal Weight.** Controls how much recency influences the score. |
 | `delta` | `float` | `0.5` | **Inflection Bonus.** Added to strategies that resulted in failure/SLA violation to encourage learning from mistakes. |
-| `decay_rate_factor` | `float` | `80.0` | Controls the steepness of time decay (higher value = slower memory decay). |
+| `decay_rate_factor` | `float` | `5.0` | Controls the steepness of time decay (higher value = slower memory decay). |
 | `anchor_penalty_factor` | `float` | `0.5` | **Anchor Bias Mitigation.** The strength of the penalty applied to memories too close to the `initial_anchor_point`. |
 
 ### Key Methods
