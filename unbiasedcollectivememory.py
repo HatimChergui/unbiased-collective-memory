@@ -28,7 +28,7 @@ class UnbiasedCollectiveMemory:
         self.beta = beta
         self.delta = delta
         self.decay_rate_factor = decay_rate_factor
-        self.anchor_penalty_factor = anchor_penalty_factor
+        self.anchor_penalty_factor = anchor_penalty_factor # for diversity
 
         
         self.MAX_RAN_BW = 40.0
