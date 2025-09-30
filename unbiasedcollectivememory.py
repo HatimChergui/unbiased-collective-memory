@@ -9,7 +9,7 @@ import math
 
 class UnbiasedCollectiveMemory:
     """
-    A standalone Collective Memory system designed to mitigate temporal and anchor biases,
+    A standalone Collective Memory system designed to mitigate temporal, availability, confirmation and anchor biases,
     and prioritize performance based on multiple weighted factors.
     """
 
@@ -30,7 +30,7 @@ class UnbiasedCollectiveMemory:
         self.decay_rate_factor = decay_rate_factor
         self.anchor_penalty_factor = anchor_penalty_factor
 
-        # NOTE: Using placeholder ranges for normalization in anchor penalty
+        
         self.MAX_RAN_BW = 40.0
         self.MIN_RAN_BW = 5.0
         self.MAX_EDGE_CPU = 45.0
@@ -132,7 +132,7 @@ class UnbiasedCollectiveMemory:
             # 3. Anchor Penalty: Combats anchor bias by penalizing closeness to the initial proposal
             anchor_penalty = self._calculate_anchor_penalty(strategy, initial_anchor) if initial_anchor else 0.0
             
-            # 4. Inflection Bonus (delta): Boosts past failure/SLA violation memories
+            # 4. Inflection Bonus (delta): Boosts past failure/SLA violation memories, combats confirmation and availability biases as well
             inflection_bonus = 0.0
             is_failure = strategy['outcome_summary'].get('negotiation_result') in ['unresolved_negotiation', 'agreement_with_sla_violation']
             if is_failure:
@@ -150,9 +150,8 @@ class UnbiasedCollectiveMemory:
         # Sort and select top N
         scored_candidates.sort(key=lambda x: x["final_score"], reverse=True)
 
-        top_n = 5
+        top_n = 3
         
-        # FIX: The retrieved list must contain the final_score for the demo to work.
         # We merge the final_score into the strategy dictionary for the output list.
         retrieved_strategies_with_score = []
         for candidate in scored_candidates[:top_n]:
@@ -166,24 +165,24 @@ class UnbiasedCollectiveMemory:
             "query_memory_average_score": np.mean([c["final_score"] for c in scored_candidates[:top_n]]) if scored_candidates else 0.0
         }
 
-# --- 2. Demonstration of Agentic Use ---
+# --- 2. Mockup of Agentic Use ---
 
 def demonstrate_memory_use():
     """
     Demonstrates the lifecycle of the unbiased collective memory.
     """
     # 1. Initialize the memory with debiasing enabled
-    memory = UnbiasedCollectiveMemory(alpha=1.0, beta=0.5, delta=1.5, anchor_penalty_factor=1.0)
+    memory = UnbiasedCollectiveMemory(alpha=1.0, beta=0.5, delta=1.5, decay_rate_factor=5.0, anchor_penalty_factor=1.0)
     
-    # Define the initial anchor point for the negotiation (simulating the first proposal)
+    # the initial anchor point for the negotiation (simulating the first proposal)
     INITIAL_ANCHOR = {
         "ran_bandwidth_mhz": 25.0, 
         "edge_cpu_frequency_ghz": 30.0
     }
-    # Set the anchor point on the memory instance (used internally by query_memory)
+    # Set the anchor point on the memory instance
     memory.initial_anchor_point = INITIAL_ANCHOR 
     
-    # 2. Log Past Episodes (Distill Strategies)
+    # 2. Log Past Episodes (Distilled Strategies)
     # Strategy 1 (Old, High Energy Saving, Close to Anchor - Should be penalized)
     memory.distill_strategy({
         "trial_number": 1, "traffic_level_category": "medium", 
@@ -234,19 +233,18 @@ def demonstrate_memory_use():
     QUERY_CONTEXT = {
         "current_trial_number": CURRENT_TRIAL,
         "keywords": ["medium", "traffic", "balanced", "energy", "performance"],
-        "initial_anchor_point": INITIAL_ANCHOR # Pass the anchor for penalty calculation
+        "initial_anchor_point": INITIAL_ANCHOR # Pass the anchor to calculate penalty
     }
 
     retrieval = memory.query_memory(query_context=QUERY_CONTEXT)
     
-    # 4. Display Retrieved Strategies (Debiased Ranking)
-    print("--- Memory Retrieval (Debiased Ranking) ---")
+    # 4. Display Retrieved Strategies according to the ranking score
+    print("--- Memory Retrieval ---")
     print(f"Query Context: Keywords='medium, traffic, balanced', Trial={CURRENT_TRIAL}\n")
     
     retrieved_strategies = retrieval['retrieved_strategies']
     
     for i, strategy in enumerate(retrieved_strategies):
-        # The strategy dictionary now contains 'final_score' due to the fix in query_memory
         final_score = strategy['final_score'] 
         
         # Recalculate anchor deviation for demonstration printout
