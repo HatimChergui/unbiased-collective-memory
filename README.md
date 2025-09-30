@@ -8,7 +8,7 @@ This approach addresses the following biases:
 
 1.  **Temporal Bias (Recency/Primacy):** Controlled by a `time-decay score` that weights memories based on their age.
 2.  **Anchor Bias:** Mitigated by an **Anchor Penalty** that suppresses memories too similar to the first proposal of the current negotiation.
-3.  **Confirmation Bias:** Addressed by an **Inflection Bonus** that increases the salience of past negotiation failures (SLA violations or unresolved talks), ensuring the agent learns from mistakes.
+3.  **Confirmation/availability Biases:** Addressed by an **Inflection Bonus** that increases the salience of past negotiation failures (SLA violations or unresolved talks), ensuring the agent learns from mistakes.
 
 -----
 
@@ -32,7 +32,8 @@ from your_module import UnbiasedCollectiveMemory
 memory = UnbiasedCollectiveMemory(
     alpha=1.0,           # Weight for Semantic Similarity
     beta=0.5,            # Weight for Time Decay
-    delta=1.5,           # Inflection Bonus (boosts failure memories)
+    delta=1.5,           # Inflection Bonus, which boosts failure memories and diversity
+    decay_rate_factor=5.0, # Controls the steepness of time decay (higher value = slower memory decay)
     anchor_penalty_factor=1.0 # Strength of penalty for being close to the Anchor
 )
 
@@ -83,7 +84,7 @@ for i, strategy in enumerate(retrieval['retrieved_strategies']):
 | `alpha` | `float` | `1.0` | **Semantic Weight.** Emphasizes keyword matching relevance. |
 | `beta` | `float` | `0.5` | **Temporal Weight.** Controls how much recency influences the score. |
 | `delta` | `float` | `0.5` | **Inflection Bonus.** Added to strategies that resulted in failure/SLA violation to encourage learning from mistakes. |
-| `decay_rate_factor` | `float` | `5.0` | Controls the steepness of time decay (higher value = slower memory decay). |
+| `decay_rate_factor` | `float` | `5.0` | **decay factor.** Controls the steepness of time decay (higher value = slower memory decay). |
 | `anchor_penalty_factor` | `float` | `0.5` | **Anchor Bias Mitigation.** The strength of the penalty applied to memories too close to the `initial_anchor_point`. |
 
 ### Key Methods
@@ -96,6 +97,6 @@ Logs the outcome of a completed negotiation trial. It calculates an objective `p
 
 Retrieves the top 5 relevant strategies based on the combined debiased scoring mechanism:
 
-$$\text{Final Score} = (\alpha \cdot \text{Semantic}) + (\beta \cdot \text{Time Decay}) + (\delta \cdot \text{Inflection Bonus}) - (\text{Anchor Penalty})$$
+$$\text{Final Score} = \alpha \cdot \text{Semantic} + \beta \cdot \text{Time Decay} + \delta \cdot \text{Inflection Bonus} - \text{Anchor Penalty}$$
 
-The `query_context` **must** include the `initial_anchor_point` (the configuration of the very first proposal) to correctly calculate the anchor penalty.
+The `query_context` **must** include the `initial_anchor_point` (the configuration of the very first agent proposal in the negotiation) to correctly calculate the anchor penalty.
