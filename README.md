@@ -12,8 +12,8 @@ The **Unbiased Collective Memory** is a Python module designed to enhance the de
 This approach addresses the following biases:
 
 1.  **Temporal Bias (Recency/Primacy):** Controlled by a `time-decay score` that weights memories based on their age.
-2.  **Anchor Bias:** Mitigated by an **Anchor Penalty** that suppresses memories too similar to the first proposal of the current negotiation.
-3.  **Confirmation/availability Biases:** Addressed by an **Inflection Bonus** that increases the salience of past negotiation failures (SLA violations or unresolved talks), ensuring the agent learns from mistakes.
+2.  **Anchor Bias/Availability Bias:** Mitigated by an **Anchor Penalty** that suppresses memories too similar to the first proposal of the current negotiation, also encourages diversity
+3.  **Confirmation Bias:** Addressed by an **Inflection Bonus** that increases the salience of past negotiation failures (SLA violations or unresolved talks), ensuring the agent learns from mistakes.
 
 -----
 
@@ -37,9 +37,9 @@ from your_module import UnbiasedCollectiveMemory
 memory = UnbiasedCollectiveMemory(
     alpha=1.0,           # Weight for Semantic Similarity
     beta=0.5,            # Weight for Time Decay
-    delta=1.5,           # Inflection Bonus, which boosts failure memories and diversity
+    delta=1.5,           # Inflection Bonus, which boosts failure memories
     decay_rate_factor=5.0, # Controls the steepness of time decay (higher value = slower memory decay)
-    anchor_penalty_factor=1.0 # Strength of penalty for being close to the Anchor
+    anchor_penalty_factor=1.0 # Strength of penalty for being close to the Anchor, boosts diversity
 )
 
 # 2. Define the Initial Anchor Point (The First Proposal)
