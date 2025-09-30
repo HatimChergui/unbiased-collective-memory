@@ -1,7 +1,8 @@
 # Unbiased Collective Memory for Agentic Negotiation
 
-`If you use this code or any (modified) part of it, please cite the corresponding paper:
-** H. Chergui, M. Catalan Cid, P. Sayyad Khodashenas, D. Camps Mur, C. Verikoukis, ''Toward an Unbiased Collective Memory for Efficient LLM-Based Agentic 6G Cross-Domain Management,'' [Online] Available: https://arxiv.org/submit/6843423/view, 2025. **`
+
+`If you use this code or any (modified) part of it, please cite the corresponding paper:`
+**H. Chergui, M. Catalan Cid, P. Sayyad Khodashenas, D. Camps Mur, C. Verikoukis, ''Toward an Unbiased Collective Memory for Efficient LLM-Based Agentic 6G Cross-Domain Management,'' [Online] Available: https://arxiv.org/submit/6843423/view, 2025.**
 
 ## Overview
 
