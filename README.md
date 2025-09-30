@@ -6,7 +6,7 @@
 
 ## Overview
 
-The **Unbiased Collective Memory** is a Python module designed to enhance the decision-making of negotiating agents by mitigating common cognitive biases in memory retrieval. Instead of relying purely on the most recent or semantically similar past negotiation outcomes, this system applies calculated penalties and bonuses to promote retrieval of **objectively high-performing strategies** and **salient learning moments (failures)**.
+The **Unbiased Collective Memory** is a Python module designed to enhance the decision-making of negotiating LLM-powered agents by mitigating common cognitive biases in memory retrieval. Instead of relying purely on the most recent or semantically similar past negotiation outcomes, this system applies calculated penalties and bonuses to promote retrieval of **objectively high-performing strategies** and **salient learning moments (failures)**.
 
 This approach addresses the following biases:
 
